@@ -56,3 +56,5 @@ To add the dependency to the requirements.txt:
    ```
    pip freeze > requirements.txt
    ```
+# sdm
+Bird Species Distribution Modelling
