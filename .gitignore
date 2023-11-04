@@ -1,9 +1,9 @@
-data/abap2
-data/aggregate
-data/bioclim
-data/ebirds
-data/google_ee
-data/inat
+*/data/abap2
+*/data/aggregate
+*/data/bioclim
+*/data/ebirds
+*/data/google_ee
+*/data/inat
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

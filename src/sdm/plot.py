@@ -4,13 +4,14 @@ import matplotlib.pyplot as plt
 # axes[1].set_xlim([15.5, 33.5])
 # axes[1].set_ylim([-36, -20.5])
 
+
 def plot_map(df, column, colors=None, filename=None, alongside=True):
-    map = gpd.GeoSeries([Point(v) for v in df[['longitude', 'latitude']].values])
+    map = gpd.GeoSeries([Point(v) for v in df[["longitude", "latitude"]].values])
 
     # Define plot configurations
     plot_config = [
         {"title": "Pentad - Full View", "xlim": None, "ylim": None},
-        {"title": "Pentad - Scaled View", "xlim": [26, 38], "ylim": [-33, -5]}
+        {"title": "Pentad - Scaled View", "xlim": [26, 38], "ylim": [-33, -5]},
     ]
 
     # Configure plots
@@ -19,8 +20,8 @@ def plot_map(df, column, colors=None, filename=None, alongside=True):
 
         map.plot(color="lightgrey", ax=ax)
 
-        x = df['longitude']
-        y = df['latitude']
+        x = df["longitude"]
+        y = df["latitude"]
         z = df[column]
 
         if colors is not None:
@@ -44,7 +45,7 @@ def plot_map(df, column, colors=None, filename=None, alongside=True):
             if alongside and i == 0:
                 continue
             else:
-                prefix = 'africa_' if i==0 else 'cropped_'
+                prefix = "africa_" if i == 0 else "cropped_"
                 fig.savefig(f"{prefix}{filename}.png", dpi=500)
 
         if not alongside:

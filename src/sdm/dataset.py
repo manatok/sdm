@@ -8,7 +8,7 @@ def generate_training(
 ) -> pd.core.frame.DataFrame:
     """
     Generate a training dataset for the given species. The returned dataset
-    will have the following columns: 
+    will have the following columns:
     - pentad
     - covariates: All of the scaled covariate columns
     - latitude, longitude
@@ -22,10 +22,10 @@ def generate_training(
     -1 otherwise
     """
 
-    pd.set_option('display.max_columns', None)
+    pd.set_option("display.max_columns", None)
 
     # Set option to display all rows
-    pd.set_option('display.max_rows', None)
+    pd.set_option("display.max_rows", None)
 
     print(observations_df.columns)
     print(observations_df.head())
