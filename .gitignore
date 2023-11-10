@@ -4,6 +4,7 @@
 */data/ebirds
 */data/google_ee
 */data/inat
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
