@@ -29,6 +29,8 @@ download_all:
 combine_sabab2:
 	$(DOCKER_RUN) combine-sabap2
 
+species_stats:
+	$(DOCKER_RUN) stats --species_id=$(SPECIES_ID)
+
 run-%:
-	#make run-download-ebirds-csv 	
 	$(DOCKER_RUN) $*

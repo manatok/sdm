@@ -168,14 +168,15 @@ def aggregate_inat():
 
 
 @cli.command()
-def download_inat():
-    """Download the iNat data from Kaggle."""
-    dataset_path = "manatok/bird-observations"
-    file_name = "inat_aves_africa.feather"
-    target_path = "./data/inat/"
-
-    download_kaggle_dataset(dataset_path, target_path, file_name)
-    print(f"Downloaded {file_name} to {target_path}")
+def combine_all():
+    """"""
+    _combine_all(
+        config["AGGREGATE_DIR"],
+        config["EBIRDS_AGGREGATE_FILE"],
+        config["INAT_AGGREGATE_FILE"],
+        config["SABAP2_COMBINED_FILE"],
+        config["COMBINED_OBSERVATIONS_FILE"],
+    )
 
 
 @cli.command()
@@ -221,18 +222,6 @@ def combine_all_covariates():
         config["BIOCLIM_COMBINED_FILE"],
         config["AGGREGATE_DIR"],
         config["COMBINED_COVARIATES_FILE"],
-    )
-
-
-@cli.command()
-def combine_all():
-    """"""
-    _combine_all(
-        config["AGGREGATE_DIR"],
-        config["EBIRDS_AGGREGATE_FILE"],
-        config["INAT_AGGREGATE_FILE"],
-        config["SABAP2_COMBINED_FILE"],
-        config["COMBINED_OBSERVATIONS_FILE"],
     )
 
 

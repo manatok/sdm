@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from .utils import make_dir_if_not_exists, add_pentad_from_lat_long
+from .utils import add_lat_long_from_pentad, make_dir_if_not_exists, add_pentad_from_lat_long
 
 
 def aggregate_by_pentad_and_sabap_ids(
@@ -15,7 +15,8 @@ def aggregate_by_pentad_and_sabap_ids(
     overwrite=False,
 ):
     bird_list_df = pd.read_csv(bird_list_file, dtype={"SABAP2_number": str})
-    
+    bird_list_df[join_column] = bird_list_df[join_column].fillna('No Match Placeholder')
+
     # Initialize an empty DataFrame to store grouped results
     all_grouped_data = pd.DataFrame()
 
@@ -26,7 +27,6 @@ def aggregate_by_pentad_and_sabap_ids(
     for chunk in pd.read_csv(filepath, sep="\t", chunksize=chunksize):
         print(f"Processing chunk: {chunk_count}", flush=True)
         chunk_count += 1
-
         chunk = chunk.merge(
             bird_list_df[[join_column, "SABAP2_number"]],
             left_on="species",
@@ -35,13 +35,13 @@ def aggregate_by_pentad_and_sabap_ids(
         )
         chunk.drop(columns=[join_column], inplace=True)
         chunk["SABAP2_number"] = chunk["SABAP2_number"].fillna("0")
-        
+
         add_pentad_from_lat_long(chunk, lat_column_name="decimalLatitude", lng_column_name="decimalLongitude")
-        
+
         grouped_chunk = (
             chunk.groupby(["pentad", "SABAP2_number"]).size().reset_index(name="count")
         )
-        
+
         all_grouped_data = pd.concat([all_grouped_data, grouped_chunk])
 
     final_grouped = (
@@ -64,9 +64,15 @@ def aggregate_by_pentad_and_sabap_ids(
 
     # Ensure all SABAP2 numbers are present as columns
     all_sabap2_numbers = sorted(bird_list_df["SABAP2_number"].unique().astype(int).astype(str))
-    missing_columns = set(all_sabap2_numbers) - set(final_df.columns)
-    for col in missing_columns:
-        final_df[col] = 0
+
+    # Identify missing columns
+    missing_columns = list(set(all_sabap2_numbers) - set(final_df.columns))
+
+    # Create a DataFrame with zeros for all missing columns
+    missing_df = pd.DataFrame(0, index=final_df.index, columns=missing_columns)
+
+    # Concatenate the original DataFrame with the missing columns DataFrame
+    final_df = pd.concat([final_df, missing_df], axis=1)
 
     # Ensure the columns are in the correct order
     final_df = final_df[['pentad'] + all_sabap2_numbers + ['0']]
@@ -105,9 +111,12 @@ def combine_all(
     final_df = df_ebirds.add(df_inat, fill_value=0)
     final_df = final_df.add(df_sabap2, fill_value=0).astype(int)
 
+    final_df.reset_index(inplace=True)
+    final_df = add_lat_long_from_pentad(final_df)
+
     # Write the final dataframe to a Feather file
     output_path = os.path.join(input_data_path, output_file)
-    final_df.reset_index().to_feather(output_path)
+    final_df.to_feather(output_path)
     print("Processing complete. Output saved to:", output_path)
 
 

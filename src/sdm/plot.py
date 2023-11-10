@@ -1,5 +1,6 @@
 import geopandas as gpd
 import matplotlib.pyplot as plt
+from shapely.geometry import Point
 
 # axes[1].set_xlim([15.5, 33.5])
 # axes[1].set_ylim([-36, -20.5])
@@ -11,7 +12,7 @@ def plot_map(df, column, colors=None, filename=None, alongside=True):
     # Define plot configurations
     plot_config = [
         {"title": "Pentad - Full View", "xlim": None, "ylim": None},
-        {"title": "Pentad - Scaled View", "xlim": [26, 38], "ylim": [-33, -5]},
+        {"title": "Pentad - Scaled View", "xlim": [15.5, 33.5], "ylim": [-36, -20.5]},
     ]
 
     # Configure plots

@@ -69,8 +69,9 @@ def make_pentad(x, y):
     x2 = 0 if x2 < 5 else 5
     y2 = 0 if y2 < 5 else 5
 
-    xx = f"{int(x)}{x1}{x2}"
-    yy = f"{int(y)}{y1}{y2}"
+    # Use zfill to ensure the strings are at least 4 characters, padded with '0' if they are not
+    xx = f"{int(x)}{x1}{x2}".zfill(4)
+    yy = f"{int(y)}{y1}{y2}".zfill(4)
 
     return f"{xx}{separator}{yy}"
 

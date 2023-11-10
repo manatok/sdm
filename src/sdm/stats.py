@@ -1,11 +1,33 @@
 import os
 import pandas as pd
 
+from .plot import plot_map
+
+
+def get_total(df, species_id=None):
+    if species_id is not None and species_id in df.columns:
+        return df[species_id].sum()
+    else:
+        columns_to_sum = df.columns.difference(['pentad', 'latitude', 'longitude'])
+        return df[columns_to_sum].sum().sum()
+
+
+def plot_it(df, species_id=None):
+    if species_id is not None and species_id in df.columns:
+        df['total'] = df[species_id].apply(lambda x: 0 if x == 0 else 1)
+    else:
+        columns_to_sum = df.columns.difference(['pentad', 'latitude', 'longitude'])
+        df['total'] = df[columns_to_sum].sum(axis=1)
+        df['total'] = df['total'].apply(lambda x: 0 if x == 0 else 1)
+
+    plot_map(df, 'total', filename=f'tmp_{species_id}', alongside=False)
+
+
 
 def get_stats(
     aggregate_dir: str,
     ebirds_file: str,
-    inat_file: str, 
+    inat_file: str,
     sabap2_file: str,
     combined_file: str,
     species_id: str = None,
@@ -16,19 +38,17 @@ def get_stats(
     sabap2_path = os.path.join(aggregate_dir, sabap2_file)
     combined_path = os.path.join(aggregate_dir, combined_file)
 
-
     df = pd.read_feather(ebirds_path)
-    print(df.head())
-    print(df.shape)
+    print(f"Total eBird observations: {get_total(df, species_id)}", flush=True)
 
     df = pd.read_feather(inat_path)
-    print(df.head())
-    print(df.shape)
+    print(f"Total iNat observations: {get_total(df, species_id)}", flush=True)
 
     df = pd.read_feather(sabap2_path)
-    print(df.head())
-    print(df.shape)
-#     # total_observations = 
+    print(f"Total SABAP2 observations: {get_total(df, species_id)}", flush=True)
 
-#     # df_inat = pd.read_feather(inat_path)
-#     # df_sabap2 = pd.read_feather(sabap2_path)
+    df = pd.read_feather(combined_path)
+    print(f"Total observations: {get_total(df, species_id)}", flush=True)
+
+    if plot:
+        plot_it(df, species_id)
