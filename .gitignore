@@ -5,6 +5,7 @@
 */data/google_ee
 */data/inat
 *.png
+.kaggle
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

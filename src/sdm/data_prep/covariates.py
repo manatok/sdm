@@ -24,7 +24,7 @@ def combine_and_scale_all_covariates(
     combined_bioclim_file: str,
     output_dir: str,
     output_file_name: str,
-    force_reload=False,
+    force_reload=True,
 ) -> pd.core.frame.DataFrame:
     """
     Combine the Google EE + Bioclim data
@@ -65,22 +65,13 @@ def combine_and_scale_all_covariates(
             :, df_scaled.columns != "pentad"
         ].fillna(mean_values)
 
-        # # Some pentads have no observations so the species and counts columns are set to 0
-        # df_scaled.fillna(df_scaled.mean(), inplace=True)
-        # # Add a latitude and longitude from the pentads
-        df_scaled = add_lat_long_from_pentad(df_scaled)
-
         # # We will read from this file next time
         feather.write_feather(df_scaled, feather_path)
-
-        # Save it back to google drive for next time
-        # df_scaled.to_csv(bioclim_combined_path, index=False)
 
 
 def combine_bioclim(
     bioclim_dir: str, output_dir: str, output_file_name: str, force_reload=False
 ) -> pd.core.frame.DataFrame:
-
     feather_path = output_dir + "/" + output_file_name
 
     if os.path.exists(feather_path) and not force_reload:

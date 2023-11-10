@@ -1,5 +1,6 @@
 import click
-
+import pandas as pd
+from .sdm.dataset import generate_training
 
 from .sdm.data_prep.abap import download_saba2_species, download_all, combine
 from .sdm.data_prep.observations import (
@@ -18,7 +19,10 @@ from .sdm.data_prep.utils import (
     make_dir_if_not_exists,
     download_csv,
 )
+from .sdm.plot import plot_map
 from .sdm.stats import get_stats
+
+from .sdm.models.runner import run_model_pipeline
 
 
 @click.group()
@@ -236,8 +240,22 @@ def stats(species_id: str = None):
         config["SABAP2_COMBINED_FILE"],
         config["COMBINED_OBSERVATIONS_FILE"],
         species_id,
-        plot=True
+        plot=True,
     )
+
+
+@cli.command()
+@click.option("--species_id", required=False, help="The SABAP2 bird id to process.")
+def generate_distribution(species_id: str):
+    training_data_df = generate_training(
+        species_id,
+        config["AGGREGATE_DIR"],
+        config["COMBINED_OBSERVATIONS_FILE"],
+        config["COMBINED_COVARIATES_FILE"],
+        absence_observations=400,
+    )
+
+    run_model_pipeline(training_data_df, species_id)
 
 
 if __name__ == "__main__":

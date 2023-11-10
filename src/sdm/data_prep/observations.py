@@ -1,7 +1,9 @@
 import os
 import pandas as pd
 
-from .utils import add_lat_long_from_pentad, make_dir_if_not_exists, add_pentad_from_lat_long
+from .utils import (
+    add_pentad_from_lat_long,
+)
 
 
 def aggregate_by_pentad_and_sabap_ids(
@@ -15,7 +17,7 @@ def aggregate_by_pentad_and_sabap_ids(
     overwrite=False,
 ):
     bird_list_df = pd.read_csv(bird_list_file, dtype={"SABAP2_number": str})
-    bird_list_df[join_column] = bird_list_df[join_column].fillna('No Match Placeholder')
+    bird_list_df[join_column] = bird_list_df[join_column].fillna("No Match Placeholder")
 
     # Initialize an empty DataFrame to store grouped results
     all_grouped_data = pd.DataFrame()
@@ -31,12 +33,14 @@ def aggregate_by_pentad_and_sabap_ids(
             bird_list_df[[join_column, "SABAP2_number"]],
             left_on="species",
             right_on=join_column,
-            how="left"
+            how="left",
         )
         chunk.drop(columns=[join_column], inplace=True)
         chunk["SABAP2_number"] = chunk["SABAP2_number"].fillna("0")
 
-        add_pentad_from_lat_long(chunk, lat_column_name="decimalLatitude", lng_column_name="decimalLongitude")
+        add_pentad_from_lat_long(
+            chunk, lat_column_name="decimalLatitude", lng_column_name="decimalLongitude"
+        )
 
         grouped_chunk = (
             chunk.groupby(["pentad", "SABAP2_number"]).size().reset_index(name="count")
@@ -63,7 +67,9 @@ def aggregate_by_pentad_and_sabap_ids(
     final_df.columns.name = None
 
     # Ensure all SABAP2 numbers are present as columns
-    all_sabap2_numbers = sorted(bird_list_df["SABAP2_number"].unique().astype(int).astype(str))
+    all_sabap2_numbers = sorted(
+        bird_list_df["SABAP2_number"].unique().astype(int).astype(str)
+    )
 
     # Identify missing columns
     missing_columns = list(set(all_sabap2_numbers) - set(final_df.columns))
@@ -75,11 +81,13 @@ def aggregate_by_pentad_and_sabap_ids(
     final_df = pd.concat([final_df, missing_df], axis=1)
 
     # Ensure the columns are in the correct order
-    final_df = final_df[['pentad'] + all_sabap2_numbers + ['0']]
+    final_df = final_df[["pentad"] + all_sabap2_numbers + ["0"]]
 
     # Replace NaN with 0 and convert to integers
     final_df.fillna(0, inplace=True)
-    final_df = final_df.astype({col: 'int' for col in final_df.columns if col != 'pentad'})
+    final_df = final_df.astype(
+        {col: "int" for col in final_df.columns if col != "pentad"}
+    )
 
     # Now save the DataFrame
     final_df.to_feather(f"{aggregate_dir}/{output_file}")
@@ -112,7 +120,7 @@ def combine_all(
     final_df = final_df.add(df_sabap2, fill_value=0).astype(int)
 
     final_df.reset_index(inplace=True)
-    final_df = add_lat_long_from_pentad(final_df)
+    # final_df = add_lat_long_from_pentad(final_df)
 
     # Write the final dataframe to a Feather file
     output_path = os.path.join(input_data_path, output_file)

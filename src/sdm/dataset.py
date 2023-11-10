@@ -1,10 +1,14 @@
+import os
 import pandas as pd
+import numpy as np
 
 
 def generate_training(
     target_species_id: str,
-    observations_df: pd.core.frame.DataFrame,
-    covariates_df: pd.core.frame.DataFrame,
+    input_data_path: str,
+    observations_file: str,
+    covariates_file: str,
+    absence_observations: int = 10,
 ) -> pd.core.frame.DataFrame:
     """
     Generate a training dataset for the given species. The returned dataset
@@ -22,25 +26,54 @@ def generate_training(
     -1 otherwise
     """
 
-    pd.set_option("display.max_columns", None)
+    observations_path = os.path.join(input_data_path, observations_file)
+    covariates_path = os.path.join(input_data_path, covariates_file)
 
-    # Set option to display all rows
-    pd.set_option("display.max_rows", None)
+    # Read the Feather files
+    observations_df = pd.read_feather(observations_path)
+    covariates_df = pd.read_feather(covariates_path)
 
-    print(observations_df.columns)
-    print(observations_df.head())
-    print(covariates_df.columns)
-    print(covariates_df.head())
+    # Sum all columns for total observations except 'pentad', 'latitude', and 'longitude'
+    columns_to_sum = observations_df.columns.difference(
+        ["pentad", "latitude", "longitude"]
+    )
+    observations_df["total_observations"] = observations_df[columns_to_sum].sum(axis=1)
 
-    # Add the 'target' column to the new dataframe
-    # observations_df[target_column] = np.where(
-    #     observations_df[target_species_total_column] > 0, 1,
-    #         np.where(
-    #             np.bitwise_and(
-    #                 observations_df[target_species_total_column] == 0,
-    #                 observations_df[total_column] >= absence_observations
-    #             ), 0, -1
-    #         )
-    #     )
+    # Select the target species column for 'target_observations'
+    target_species_total_column = (
+        target_species_id  # Assuming the column name is the species ID
+    )
+    observations_df["target_observations"] = observations_df[
+        target_species_total_column
+    ]
 
-    # return observations_df
+    # Add the 'target' column
+    observations_df["target"] = np.where(
+        observations_df[target_species_total_column] > 0,
+        1,
+        np.where(
+            np.bitwise_and(
+                observations_df[target_species_total_column] == 0,
+                observations_df["total_observations"] >= absence_observations,
+            ),
+            0,
+            -1,
+        ),
+    )
+
+    # Left join with the covariates DataFrame
+    merged_df = covariates_df.merge(observations_df, on="pentad", how="left")
+
+    # Fill missing values with 0
+    merged_df[["total_observations", "target_observations"]] = merged_df[
+        ["total_observations", "target_observations"]
+    ].fillna(0)
+
+    # Select only the necessary columns for return
+    required_columns = covariates_df.columns.to_list() + [
+        "total_observations",
+        "target_observations",
+        "target",
+    ]
+
+    return merged_df[required_columns]

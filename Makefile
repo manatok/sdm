@@ -32,5 +32,8 @@ combine_sabab2:
 species_stats:
 	$(DOCKER_RUN) stats --species_id=$(SPECIES_ID)
 
+generate_distribution:
+	$(DOCKER_RUN) generate-distribution --species_id=$(SPECIES_ID)
+
 run-%:
 	$(DOCKER_RUN) $*

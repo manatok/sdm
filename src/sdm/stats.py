@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 
+from .data_prep.utils import add_lat_long_from_pentad
 from .plot import plot_map
 
 
@@ -51,4 +52,5 @@ def get_stats(
     print(f"Total observations: {get_total(df, species_id)}", flush=True)
 
     if plot:
+        df = add_lat_long_from_pentad(df)
         plot_it(df, species_id)

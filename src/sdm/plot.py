@@ -2,9 +2,6 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 from shapely.geometry import Point
 
-# axes[1].set_xlim([15.5, 33.5])
-# axes[1].set_ylim([-36, -20.5])
-
 
 def plot_map(df, column, colors=None, filename=None, alongside=True):
     map = gpd.GeoSeries([Point(v) for v in df[["longitude", "latitude"]].values])
