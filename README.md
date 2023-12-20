@@ -6,6 +6,14 @@ Observation data was obtained from [SABAP2](https://sabap2.birdmap.africa/), [iN
 
 The geographic sampling unit employed in this research is the 'pentad,' corresponding to a grid cell measuring 5 minutes in both latitude and longitude. Each pentad covers an area of approximately 80 square kilometers, depending on latitude and longitude. We use this as this is the geographic sampling scale of the SABAP2 project.
 
+
+
+
+
+Africa              | Cropped
+:-------------------------:|:-------------------------:
+![Pied Avocet](/img/avocet_africa.png)  |  ![Pied Avocet](/img/avocet_south.png)
+
 ## Data
 The datasets have all been added to Kaggle, at different stages of aggregation, to make it easy for anyone to download them and run this pipeline. There are commands that can be run in this pipeline that will download all of the datasets.
 
