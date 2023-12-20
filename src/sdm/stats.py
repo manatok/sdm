@@ -9,20 +9,21 @@ def get_total(df, species_id=None):
     if species_id is not None and species_id in df.columns:
         return df[species_id].sum()
     else:
-        columns_to_sum = df.columns.difference(['pentad', 'latitude', 'longitude'])
+        columns_to_sum = df.columns.difference(
+            ["pentad", "latitude", "longitude", "total_pentad_observations"]
+        )
         return df[columns_to_sum].sum().sum()
 
 
 def plot_it(df, species_id=None):
     if species_id is not None and species_id in df.columns:
-        df['total'] = df[species_id].apply(lambda x: 0 if x == 0 else 1)
+        df["total"] = df[species_id].apply(lambda x: 0 if x == 0 else 1)
     else:
-        columns_to_sum = df.columns.difference(['pentad', 'latitude', 'longitude'])
-        df['total'] = df[columns_to_sum].sum(axis=1)
-        df['total'] = df['total'].apply(lambda x: 0 if x == 0 else 1)
+        columns_to_sum = df.columns.difference(["pentad", "latitude", "longitude"])
+        df["total"] = df[columns_to_sum].sum(axis=1)
+        df["total"] = df["total"].apply(lambda x: 0 if x == 0 else 1)
 
-    plot_map(df, 'total', filename=f'tmp_{species_id}', alongside=False)
-
+    plot_map(df, "total", filename=f"{species_id}_preview", alongside=False)
 
 
 def get_stats(

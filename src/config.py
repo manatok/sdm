@@ -14,7 +14,8 @@ config = {
     "GOOGLE_EE_DIR": "src/data/google_ee",
     "GOOGLE_EE_COMBINED_FILE": "google_ee_combined.feather",
     "COMBINED_COVARIATES_FILE": "combined_covariates.feather",
-    "COMBINED_OBSERVATIONS_FILE": "combined_observations.feather",
+    "VERIFIED_OBSERVATIONS_FILE": "verified_observations.feather",
+    "UNVERIFIED_OBSERVATIONS_FILE": "unverified_observations.feather",
     "KAGGLE_EBIRDS_DATASET": "manatok/bird-observations-ebird",
     "KAGGLE_EBIRDS_CSV": "ebirds-africa.csv",
     "KAGGLE_EBIRDS_FEATHER": "ebirds-africa.feather",
@@ -23,4 +24,5 @@ config = {
     "KAGGLE_INAT_FEATHER": "inat_aves_africa.csv",
     "KAGGLE_BIOCLIM_DATASET": "manatok/worldclim",
     "KAGGLE_GOOGLE_EE_DATASET": "manatok/africa-bioclim-google-ee",
+    "KAGGLE_AGGREGATE_DATASET": "manatok/african-bird-observations-and-covariates-by-pentad",
 }

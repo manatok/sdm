@@ -35,5 +35,8 @@ species_stats:
 generate_distribution:
 	$(DOCKER_RUN) generate-distribution --species_id=$(SPECIES_ID)
 
+generate_all_distributions:
+	$(DOCKER_RUN) generate-all-distributions
+
 run-%:
 	$(DOCKER_RUN) $*

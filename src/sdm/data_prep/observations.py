@@ -93,39 +93,90 @@ def aggregate_by_pentad_and_sabap_ids(
     final_df.to_feather(f"{aggregate_dir}/{output_file}")
 
 
-def combine_all(
+def sum_observations(
     input_data_path: str,
-    ebirds_file: str,
-    inat_file: str,
-    sabap2_file: str,
-    output_file: str,
+    verified_observations_files: list[str],
+    unverified_observations_files: list[str],
+    verified_observations_output_file: str,
+    unverified_observations_output_file: str,
 ):
-    # Load the three Feather files into Pandas DataFrames
-    ebirds_path = os.path.join(input_data_path, ebirds_file)
-    inat_path = os.path.join(input_data_path, inat_file)
-    sabap2_path = os.path.join(input_data_path, sabap2_file)
+    """
+    This method replaces the combine_all method by keeping verified and unverified
+    observations separate. We trust the observations from SABAP2 and iNat, but not
+    from eBirds, so we keep eBirds separate. We will only use eBirds when calculating
+    the pseudo-absence
 
-    # Read the Feather files
-    df_ebirds = pd.read_feather(ebirds_path)
-    df_inat = pd.read_feather(inat_path)
-    df_sabap2 = pd.read_feather(sabap2_path)
+    :param input_data_path: The path to the input data folder
+    :param verified_observations_files: A list of Feather file names (SABAP2 + iNat)
+        for datasets where the observations were verified.
+    :param unverified_observations_files: A list of Feather file names (eBirds)
+        for datasets where the observations were not verified.
+    :param verified_observations_output_file: The name of the Feather file
+        containing the verified observations
+    :param unverified_observations_output_file: The name of the Feather file
+        containing the unverified observations
+    """
 
-    # Ensure 'pentad' is the index for each dataframe
-    df_ebirds.set_index("pentad", inplace=True)
-    df_inat.set_index("pentad", inplace=True)
-    df_sabap2.set_index("pentad", inplace=True)
+    print("Verified files:", verified_observations_files)
+    print("Unverified files:", unverified_observations_files)
 
-    # Combine all dataframes by adding them
-    final_df = df_ebirds.add(df_inat, fill_value=0)
-    final_df = final_df.add(df_sabap2, fill_value=0).astype(int)
+    verified_observations_dfs = [
+        pd.read_feather(os.path.join(input_data_path, f)).set_index("pentad")
+        for f in verified_observations_files
+    ]
 
-    final_df.reset_index(inplace=True)
-    # final_df = add_lat_long_from_pentad(final_df)
+    unverified_observations_dfs = [
+        pd.read_feather(os.path.join(input_data_path, f)).set_index("pentad")
+        for f in unverified_observations_files
+    ]
 
-    # Write the final dataframe to a Feather file
-    output_path = os.path.join(input_data_path, output_file)
-    final_df.to_feather(output_path)
-    print("Processing complete. Output saved to:", output_path)
+    # Add up all of the observations per pentad
+    total_verified_observations_df = (
+        pd.concat(verified_observations_dfs)
+        .groupby(level=0)
+        .sum(min_count=1)
+        .fillna(0)
+        .astype(int)
+    )
+
+    total_unverified_observations_df = (
+        pd.concat(unverified_observations_dfs)
+        .groupby(level=0)
+        .sum(min_count=1)
+        .fillna(0)
+        .astype(int)
+    )
+
+    # Count all observations for each pentad
+    total_verified_observations = total_verified_observations_df.sum(axis=1)
+    total_unverified_observations = total_unverified_observations_df.sum(axis=1)
+
+    # Join the new column with the original DataFrame
+    total_verified_observations_df = pd.concat(
+        [
+            total_verified_observations_df,
+            total_verified_observations.rename("total_pentad_observations"),
+        ],
+        axis=1,
+    )
+    total_unverified_observations_df = pd.concat(
+        [
+            total_unverified_observations_df,
+            total_unverified_observations.rename("total_pentad_observations"),
+        ],
+        axis=1,
+    )
+
+    total_verified_observations_df.reset_index(inplace=True)
+    total_unverified_observations_df.reset_index(inplace=True)
+
+    # Saving to Feather files
+    total_verified_observations_df.to_feather(
+        os.path.join(input_data_path, verified_observations_output_file)
+    )
+    total_unverified_observations_df.to_feather(
+        os.path.join(input_data_path, unverified_observations_output_file)
+    )
 
 
 def generate_sabap_species_diff(

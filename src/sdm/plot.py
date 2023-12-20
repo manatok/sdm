@@ -8,8 +8,13 @@ def plot_map(df, column, colors=None, filename=None, alongside=True):
 
     # Define plot configurations
     plot_config = [
-        {"title": "Pentad - Full View", "xlim": None, "ylim": None},
-        {"title": "Pentad - Scaled View", "xlim": [15.5, 33.5], "ylim": [-36, -20.5]},
+        {"title": "Pentad - Full View", "xlim": None, "ylim": None, "s": 0.01},
+        {
+            "title": "Pentad - Scaled View",
+            "xlim": [15.5, 33.5],
+            "ylim": [-36, -20.5],
+            "s": 2,
+        },
     ]
 
     # Configure plots
@@ -23,9 +28,9 @@ def plot_map(df, column, colors=None, filename=None, alongside=True):
         z = df[column]
 
         if colors is not None:
-            ax.scatter(x, y, c=colors, s=2)
+            ax.scatter(x, y, c=colors, s=config["s"], marker="s")
         else:
-            sc = ax.scatter(x, y, c=z, s=2)
+            sc = ax.scatter(x, y, c=z, s=config["s"], marker="s")
             fig.colorbar(sc, ax=ax, label=column)
 
         ax.set_xlabel("Longitude")
@@ -41,13 +46,16 @@ def plot_map(df, column, colors=None, filename=None, alongside=True):
         # Save and/or display plots
         if filename:
             if alongside and i == 0:
+                plt.close(fig)  # Close the figure to free up memory
                 continue
             else:
-                prefix = "africa_" if i == 0 else "cropped_"
-                fig.savefig(f"{prefix}{filename}.png", dpi=500)
+                suffix = "_africa" if i == 0 else "_cropped"
+                fig.savefig(f"output/maps/{filename}{suffix}.png", dpi=1000)
+                plt.close(fig)  # Close the figure to free up memory
 
         if not alongside:
             plt.show()
+            plt.close(fig)  # Close the figure to free up memory
 
     if alongside:
         plt.show()

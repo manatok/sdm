@@ -1,11 +1,9 @@
 import os
-import glob
 import numpy as np
 import pandas as pd
 import pyarrow.feather as feather
 from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
-from .utils import add_lat_long_from_pentad
 
 
 def scale_covariates(covariates_df: pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
@@ -37,7 +35,7 @@ def combine_and_scale_all_covariates(
     combined_bioclim_feather_path = output_dir + "/" + combined_bioclim_file
 
     if os.path.exists(feather_path) and not force_reload:
-        print("Cached bioclim file already exists...")
+        print("Cached scaled covariates file already exists...")
         return
     else:
         # load and flatten all of the bioclim files

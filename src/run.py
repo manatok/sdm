@@ -1,11 +1,9 @@
 import click
-import pandas as pd
-from .sdm.dataset import generate_training
 
 from .sdm.data_prep.abap import download_saba2_species, download_all, combine
 from .sdm.data_prep.observations import (
     aggregate_by_pentad_and_sabap_ids,
-    combine_all as _combine_all,
+    sum_observations as _sum_observations,
     generate_sabap_species_diff,
 )
 from .config import config
@@ -19,16 +17,15 @@ from .sdm.data_prep.utils import (
     make_dir_if_not_exists,
     download_csv,
 )
-from .sdm.plot import plot_map
 from .sdm.stats import get_stats
 
-from .sdm.models.runner import run_model_pipeline
+from .sdm.models.runner import train_and_predict, train_and_predict_all
 
 
 @click.group()
 def cli():
     """Main entry point for the CLI."""
-    print("CLI group is being executed.")
+    pass
 
 
 @cli.command()
@@ -72,7 +69,7 @@ def download_sabap2(overwrite: bool = False, combine: bool = True):
 
 @cli.command()
 def combine_sabap2():
-    # Combine all of the datasets into observations per dataset
+    """Combine all of the datasets into observations per dataset"""
     combine(
         config["SABAP2_DATA_DIR"],
         config["PENTAD_LIST"],
@@ -157,7 +154,7 @@ def generate_sabap_inat_diff():
 
 @cli.command()
 def aggregate_inat():
-    """Once the BirdList.csv file has been populated with the EBIRDS_name
+    """Once the BirdList.csv file has been populated with the inat_name
     column this method can be run to generate a pentad x SABAP2_species_id
     file"""
     aggregate_by_pentad_and_sabap_ids(
@@ -172,14 +169,22 @@ def aggregate_inat():
 
 
 @cli.command()
-def combine_all():
-    """"""
-    _combine_all(
+def sum_observations():
+    """
+    Sums and combines the observation files. The iNat + SABAP2 files are
+    combined into a single verified observation file, while the eBirds file
+    becomes the unverified observation file. At some point we may add other
+    datasets to either.
+    """
+    _sum_observations(
         config["AGGREGATE_DIR"],
-        config["EBIRDS_AGGREGATE_FILE"],
-        config["INAT_AGGREGATE_FILE"],
-        config["SABAP2_COMBINED_FILE"],
-        config["COMBINED_OBSERVATIONS_FILE"],
+        [
+            config["INAT_AGGREGATE_FILE"],
+            config["SABAP2_COMBINED_FILE"],
+        ],
+        [config["EBIRDS_AGGREGATE_FILE"]],
+        config["VERIFIED_OBSERVATIONS_FILE"],
+        config["UNVERIFIED_OBSERVATIONS_FILE"],
     )
 
 
@@ -203,6 +208,7 @@ def download_google_ee_data():
 
 @cli.command()
 def combine_bioclim():
+    """Combines all of the bioclim files into a single file"""
     _combine_bioclim(
         config["BIOCLIM_DIR"],
         config["AGGREGATE_DIR"],
@@ -212,6 +218,7 @@ def combine_bioclim():
 
 @cli.command()
 def combine_google_ee_covariates():
+    """Combines all of the google ee covariates files into a single file"""
     _combine_google_ee_covariates(
         config["GOOGLE_EE_DIR"],
         config["AGGREGATE_DIR"],
@@ -221,6 +228,7 @@ def combine_google_ee_covariates():
 
 @cli.command()
 def combine_all_covariates():
+    """Combines the Google EE and bioclim covariates files into a single"""
     combine_and_scale_all_covariates(
         config["GOOGLE_EE_COMBINED_FILE"],
         config["BIOCLIM_COMBINED_FILE"],
@@ -230,15 +238,27 @@ def combine_all_covariates():
 
 
 @cli.command()
+def download_all_data():
+    """Download all of the aggregated data needed to run the model."""
+    make_dir_if_not_exists(config["AGGREGATE_DIR"])
+
+    download_kaggle_dataset(
+        config["KAGGLE_AGGREGATE_DATASET"],
+        config["AGGREGATE_DIR"],
+    )
+
+
+@cli.command()
 @click.option("--species_id", required=False, help="The SABAP2 bird id to process.")
 def stats(species_id: str = None):
     """Get all the stats for a given species"""
+    print("Species: ", species_id, flush=True)
     get_stats(
         config["AGGREGATE_DIR"],
         config["EBIRDS_AGGREGATE_FILE"],
         config["INAT_AGGREGATE_FILE"],
         config["SABAP2_COMBINED_FILE"],
-        config["COMBINED_OBSERVATIONS_FILE"],
+        config["VERIFIED_OBSERVATIONS_FILE"],
         species_id,
         plot=True,
     )
@@ -247,15 +267,36 @@ def stats(species_id: str = None):
 @cli.command()
 @click.option("--species_id", required=False, help="The SABAP2 bird id to process.")
 def generate_distribution(species_id: str):
-    training_data_df = generate_training(
+    """
+    Run the model for a given species. This will generate:
+        1. Some maps in output/maps/species_id_...
+        2. A summary file in output/stats/species_id_...
+        3. The pentad probabilities file in output/models/species_id_...
+    """
+    train_and_predict(
         species_id,
         config["AGGREGATE_DIR"],
-        config["COMBINED_OBSERVATIONS_FILE"],
+        config["VERIFIED_OBSERVATIONS_FILE"],
+        config["UNVERIFIED_OBSERVATIONS_FILE"],
         config["COMBINED_COVARIATES_FILE"],
-        absence_observations=400,
     )
 
-    run_model_pipeline(training_data_df, species_id)
+
+@cli.command()
+def generate_all_distributions():
+    """
+    Run the model for all species. This will generate:
+        1. Some maps in output/maps/species_id_...
+        2. Summary files in output/stats/species_id_...
+        3. The pentad probabilities files in output/models/species_id_...
+    """
+    train_and_predict_all(
+        config["BIRD_LIST"],
+        config["AGGREGATE_DIR"],
+        config["VERIFIED_OBSERVATIONS_FILE"],
+        config["UNVERIFIED_OBSERVATIONS_FILE"],
+        config["COMBINED_COVARIATES_FILE"],
+    )
 
 
 if __name__ == "__main__":

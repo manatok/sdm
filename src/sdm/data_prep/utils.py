@@ -136,12 +136,16 @@ def add_lat_long_from_pentad(
     """
     Add a latitude and longitude column to the dataframe based on the pentad
     """
-    lat_long_df = df[pentad_column_name].apply(
-        lambda x: pd.Series(parse_pentad(x), index=[lat_column_name, lng_column_name])
+    # Use a list comprehension to create a list of tuples (latitude, longitude)
+    lat_lng_tuples = [parse_pentad(x) for x in df[pentad_column_name]]
+
+    # Convert the list of tuples into a DataFrame
+    lat_lng_df = pd.DataFrame(
+        lat_lng_tuples, columns=[lat_column_name, lng_column_name]
     )
 
     # Add latitude and longitude columns to the input DataFrame
-    df[lat_column_name] = lat_long_df[lat_column_name]
-    df[lng_column_name] = lat_long_df[lng_column_name]
+    df[lat_column_name] = lat_lng_df[lat_column_name]
+    df[lng_column_name] = lat_lng_df[lng_column_name]
 
     return df
