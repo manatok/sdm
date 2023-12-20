@@ -4,7 +4,6 @@
 */data/ebirds
 */data/google_ee
 */data/inat
-*.png
 .kaggle
 output/**/*.csv
 output/**/*.png
