@@ -5,6 +5,7 @@ import numpy as np
 from ..utils import get_species_name
 
 from ..data_prep.utils import add_lat_long_from_pentad
+from ..data_prep.two_km_grid import add_lat_long_from_two_km_pentad
 from .random_forest import train, predict
 
 
@@ -14,12 +15,17 @@ def train_and_predict_all(
     verified_observations_file: str,
     unverified_observations_file: str,
     covariates_file: str,
+    output_dir: str,
+    use_2km_grid: bool = False,
 ):
     # Read the bird list into a DataFrame
     bird_df = pd.read_csv(bird_list)
 
+    start = False
+
     # Iterate through the DataFrame rows
-    for index, row in bird_df.iterrows():
+    for _, row in bird_df.iterrows():
+
         print(f"Processing: {row['SA_name']}", flush=True)
 
         sabap2_id = str(row["SABAP2_number"])
@@ -34,6 +40,8 @@ def train_and_predict_all(
             verified_observations_file,
             unverified_observations_file,
             covariates_file,
+            output_dir,
+            use_2km_grid
         )
 
 
@@ -43,6 +51,8 @@ def train_and_predict(
     verified_observations_file: str,
     unverified_observations_file: str,
     covariates_file: str,
+    output_dir: str,
+    use_2km_grid: bool = False,
     absence_observations: int | None = None,
 ):
     # Read the Feather files
@@ -50,10 +60,15 @@ def train_and_predict(
         os.path.join(input_data_path, verified_observations_file)
     )
 
-    print(f"SUM: {sum(verified_observations_df[target_species_id])}")
-    if sum(verified_observations_df[target_species_id]) < 30:
+    if str(target_species_id) not in verified_observations_df:
+        print("Skipping: No target_species_id for:", target_species_id, flush=True)
+        return
+
+    print(f"SUM: {sum(verified_observations_df[str(target_species_id)])}")
+
+    if sum(verified_observations_df[str(target_species_id)]) < 30:
         print(
-            f"Skipping - Not enough pentads with target species_id: {target_species_id} - Total: {sum(verified_observations_df[target_species_id])}"
+            f"Skipping - Not enough observations with target species_id: {target_species_id} - Total: {sum(verified_observations_df[str(target_species_id)])}"
         )
         return
 
@@ -61,7 +76,10 @@ def train_and_predict(
         os.path.join(input_data_path, unverified_observations_file)
     )
     covariates_df = pd.read_feather(os.path.join(input_data_path, covariates_file))
-    covariates_df = add_lat_long_from_pentad(covariates_df)
+    if use_2km_grid:
+        covariates_df = add_lat_long_from_two_km_pentad(covariates_df)
+    else:
+        covariates_df = add_lat_long_from_pentad(covariates_df)
 
     if not absence_observations:
         absence_observations = calculate_target_species_ratio(
@@ -79,6 +97,12 @@ def train_and_predict(
     positive_df = training_data_df.query("target == 1")
     print("Total pentads with target species: ", positive_df.shape[0])
 
+    if positive_df.shape[0] < 30:
+        print(
+            f"Skipping - Not enough pentads with target species_id: {target_species_id} - Total: {positive_df.shape[0]}"
+        )
+        return
+
     negative_df = training_data_df.query("target == 0")
     print("Total pseudo-absence: ", negative_df.shape[0])
 
@@ -91,16 +115,16 @@ def train_and_predict(
     }
     results_to_log.update(results)
 
-    append_results_to_csv(results_to_log, "output/training_results.csv")
+    append_results_to_csv(results_to_log, f"{output_dir}/training_results.csv")
 
     pentad_probabilities = predict(
-        model, training_data_df, positive_df, negative_df, target_species_id
+        model, training_data_df, positive_df, negative_df, target_species_id, output_dir
     )
 
     pentad_probabilities_sorted = pentad_probabilities.sort_index()
 
     pentad_probabilities_sorted.to_csv(
-        f"output/pentad_probabilities/{target_species_id}.csv", index=False
+        f"{output_dir}/pentad_probabilities/{target_species_id}.csv", index=False
     )
 
 

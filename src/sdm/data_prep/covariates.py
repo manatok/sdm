@@ -67,39 +67,58 @@ def combine_and_scale_all_covariates(
         feather.write_feather(df_scaled, feather_path)
 
 
-def combine_bioclim(
-    bioclim_dir: str, output_dir: str, output_file_name: str, force_reload=False
-) -> pd.core.frame.DataFrame:
-    feather_path = output_dir + "/" + output_file_name
-
-    if os.path.exists(feather_path) and not force_reload:
-        print("Found existing file...")
-        return
+def combine_bioclim(bioclim_dir: str, output_dir: str, output_file_name: str) -> pd.core.frame.DataFrame:
+    feather_path = os.path.join(output_dir, output_file_name)
 
     csv_files = [f for f in os.listdir(bioclim_dir) if f.endswith(".csv")]
 
-    # Initialize an empty list to hold the DataFrames
-    dfs = []
+    # Initialize df_final as None for the first file processing
+    df_final = None
 
-    # Iterate over all the CSV files and add them to the list
     for file in tqdm(csv_files, desc="Processing files"):
         file_path = os.path.join(bioclim_dir, file)
-        # Read the CSV file into a DataFrame with the 'Name' column as the index
-        df = pd.read_csv(file_path, usecols=["Name", "MEAN"], dtype=str)
-        # Remove the '.csv' suffix from the filename
-        col_name = file.split("/")[-1].rstrip(".csv").lower()
-        # Rename the 'MEAN' column with the filename
-        df.rename(columns={"MEAN": col_name, "Name": "pentad"}, inplace=True)
-        # Add the DataFrame to the list
-        dfs.append(df.set_index("pentad"))
 
-    # Concatenate all the DataFrames along the columns axis (axis=1)
-    df_final = pd.concat(dfs, axis=1, sort=False, join="outer")
-    # Convert the pentad column into a regular column again
+        if not file.startswith("_"):
+            print("Processing file: " + file, flush=True)
+            # For files without underscore prefix
+            df = pd.read_csv(file_path, usecols=["Name", "MEAN"], dtype=str)
+            col_name = file.rsplit("/", 1)[-1].rstrip(".csv").lower()
+            df.rename(columns={"MEAN": col_name, "Name": "pentad"}, inplace=True)
+            df.set_index("pentad", inplace=True)
+
+            # Append or merge with df_final
+            if df_final is None:
+                df_final = df
+            else:
+                df_final = df_final.join(df, how='left')
+
+    for file in tqdm(csv_files, desc="Processing files"):
+        if file.startswith("_"):
+            print("processing file: " + file, flush=True)
+            print(f"Pre shape: {df_final.shape}", flush=True)
+            file_path = os.path.join(bioclim_dir, file)
+
+            # For files with underscore prefix, include all columns
+            df = pd.read_csv(file_path, dtype=str)
+            df.rename(columns={"Name": "pentad"}, inplace=True)
+            df.set_index("pentad", inplace=True)
+            print(df.head())
+            df_final = df_final.merge(df, on="pentad", how='left')
+            print(f"Post shape: {df_final.shape}", flush=True)
+
+    # # Fill any missing values with 0
+    # df_final.fillna(0, inplace=True)
+
+    # Reset index to turn 'pentad' back into a column
     df_final.reset_index(inplace=True)
 
+    print(df_final.dtypes)
+    print(df_final.head())
+
+    # Save the final DataFrame to a Feather file
     feather.write_feather(df_final, feather_path)
 
+    return df_final
 
 def combine_google_ee_covariates(
     google_ee_dir: str, output_dir: str, output_file_name: str, force_reload=False

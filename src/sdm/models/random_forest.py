@@ -67,7 +67,7 @@ def train(balanced_df):
     return clf, results
 
 
-def predict(clf, training_data_df, positive_df, negative_df, species_id):
+def predict(clf, training_data_df, positive_df, negative_df, species_id, output_dir):
     to_predict_df = training_data_df[training_data_df["target"] == -1].copy()
 
     proba_predictions = clf.predict_proba(to_predict_df.drop(columns=drop_cols))
@@ -85,7 +85,7 @@ def predict(clf, training_data_df, positive_df, negative_df, species_id):
     plot_map(
         combined_df,
         "target",
-        filename=f"{species_id}_{get_species_name(species_id)}_species_distribution",
+        filename=f"{output_dir}/maps/{species_id}_{get_species_name(species_id)}_species_distribution",
         alongside=False,
     )
 
@@ -94,7 +94,7 @@ def predict(clf, training_data_df, positive_df, negative_df, species_id):
     plot_map(
         combined_df,
         "target",
-        filename=f"{species_id}_{get_species_name(species_id)}_species_distribution_abs",
+        filename=f"{output_dir}/maps/{species_id}_{get_species_name(species_id)}_species_distribution_abs",
         alongside=False,
     )
 

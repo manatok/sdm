@@ -4,7 +4,9 @@ import pandas as pd
 from .utils import (
     add_pentad_from_lat_long,
 )
-
+from .two_km_grid import (
+    add_two_km_pentad_from_lat_long
+)
 
 def aggregate_by_pentad_and_sabap_ids(
     input_data_path: str,
@@ -14,7 +16,7 @@ def aggregate_by_pentad_and_sabap_ids(
     pentad_list_file: str,
     aggregate_dir: str,
     join_column: str,
-    overwrite=False,
+    use_2km_pentad: bool = False,
 ):
     bird_list_df = pd.read_csv(bird_list_file, dtype={"SABAP2_number": str})
     bird_list_df[join_column] = bird_list_df[join_column].fillna("No Match Placeholder")
@@ -38,9 +40,17 @@ def aggregate_by_pentad_and_sabap_ids(
         chunk.drop(columns=[join_column], inplace=True)
         chunk["SABAP2_number"] = chunk["SABAP2_number"].fillna("0")
 
-        add_pentad_from_lat_long(
-            chunk, lat_column_name="decimalLatitude", lng_column_name="decimalLongitude"
-        )
+        if use_2km_pentad:
+            grid_df = pd.read_csv('src/google_ee/assets/grid_2km.csv')
+            add_two_km_pentad_from_lat_long(
+                chunk, grid_df, lat_column_name="decimalLatitude", lng_column_name="decimalLongitude"
+            )
+            # remove any observations that were not in the 2km pentad grid
+            chunk = chunk.dropna(subset=['pentad'])
+        else:
+            add_pentad_from_lat_long(
+                chunk, lat_column_name="decimalLatitude", lng_column_name="decimalLongitude"
+            )
 
         grouped_chunk = (
             chunk.groupby(["pentad", "SABAP2_number"]).size().reset_index(name="count")
@@ -91,6 +101,7 @@ def aggregate_by_pentad_and_sabap_ids(
 
     # Now save the DataFrame
     final_df.to_feather(f"{aggregate_dir}/{output_file}")
+    print(final_df.head())
 
 
 def sum_observations(

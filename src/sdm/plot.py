@@ -7,6 +7,16 @@ def plot_map(df, column, colors=None, filename=None, alongside=True):
     map = gpd.GeoSeries([Point(v) for v in df[["longitude", "latitude"]].values])
 
     # Define plot configurations
+    # Used for the 2km grid
+    # plot_config = [
+    #     {
+    #         "title": "Pentad - Scaled View",
+    #         "xlim": [15.5, 33.5],
+    #         "ylim": [-36, -20.5],
+    #         "s": 0.1,
+    #     },
+    # ]
+
     plot_config = [
         {"title": "Pentad - Full View", "xlim": None, "ylim": None, "s": 0.01},
         {
@@ -50,12 +60,15 @@ def plot_map(df, column, colors=None, filename=None, alongside=True):
                 continue
             else:
                 suffix = "_africa" if i == 0 else "_cropped"
-                fig.savefig(f"output/maps/{filename}{suffix}.png", dpi=1000)
+                fig.savefig(f"{filename}{suffix}.png", dpi=1000)
                 plt.close(fig)  # Close the figure to free up memory
 
         if not alongside:
             plt.show()
             plt.close(fig)  # Close the figure to free up memory
 
-    if alongside:
-        plt.show()
+    # if alongside:
+    #     plt.show()
+
+
+
